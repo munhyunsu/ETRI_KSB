@@ -3,6 +3,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.contrib.tensor_forest.python import tensor_forest
 from tensorflow.python.ops import resources
+from tensorflow.saved_model import tag_constants
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -106,6 +107,9 @@ def main():
     print('saved path: ', saver.save(sess, './model/model.ckpt'))
     tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pb', as_text=False)
     tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pbtxt')
+    builder = tf.saved_model.builder.SavedModelBuilder('./saved_model')
+    builder.add_meta_graph_and_variables(sess, [tag_constants.SERVING])
+    builder.save()
 
 
 if __name__ == '__main__':
