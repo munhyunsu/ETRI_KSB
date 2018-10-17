@@ -14,7 +14,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 def get_files(path, ext='', recursive=False):
     path_list = [path]
-    file_list = list()
 
     while len(path_list) > 0:
         cpath = path_list.pop()
@@ -22,16 +21,15 @@ def get_files(path, ext='', recursive=False):
             for entry in it:
                 if not entry.name.startswith('.') and entry.is_file():
                     if entry.name.endswith(ext):
-                        file_list.append(entry.path)
+                        yield entry.path
                     else:
                         if recursive:
                             path_list.append(entry.path)
-    return file_list
 
 
 def main():
     # Parameters
-    num_steps = 1  # Total steps to train
+    num_steps = 50  # Total steps to train
     num_classes = 100  # The 10 digits
     num_features = 8  # Each image is 28x28 pixels
     num_trees = 10
@@ -75,18 +73,19 @@ def main():
     # Training
     for i in range(1, num_steps + 1):
         # Prepare Data
-        for file in get_files('output', ext='csv'):
+        for file in get_files('ready', ext='csv'):
             data = pd.read_csv(file)
             input_x = data.iloc[:, 0:-1].values
             input_y = data.iloc[:, -1].values
             _, l = sess.run([train_op, loss_op], feed_dict={X: input_x, Y: input_y})
 
     # Test Model
+    os.makedirs('./archive', exist_ok=True)
     accuracy_sum = 0
     accuracy_max = -1
     accuracy_min = 1
     loop = 0
-    for file in get_files('output', ext='csv'):
+    for file in get_files('ready', ext='csv'):
         data = pd.read_csv(file)
         input_x = data.iloc[:, 0:-1].values
         input_y = data.iloc[:, -1].values
@@ -98,6 +97,8 @@ def main():
         if accuracy_min > accuracy:
             accuracy_min = accuracy
         loop = loop + 1
+        filename = datetime.datetime.strftime(datetime.datetime.now(), '%Y%M%d') + '.csv'
+        os.rename(file, './archive'+filename)
     print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}', accuracy_sum/loop, accuracy_max, accuracy_min)
 
     os.makedirs('./model', exist_ok=True)
