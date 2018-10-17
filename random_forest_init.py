@@ -101,6 +101,8 @@ def main():
 
     os.makedirs('./model', exist_ok=True)
     print('saved path: ', saver.save(sess, './model/model.ckpt'))
+    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pb', as_text=False)
+    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pbtxt')
 
 
 if __name__ == '__main__':
