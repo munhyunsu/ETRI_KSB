@@ -99,7 +99,8 @@ def main():
         loop = loop + 1
         filename = datetime.datetime.strftime(datetime.datetime.now(), '%Y%M%d') + '.csv'
         os.rename(file, './archive'+filename)
-    print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}', accuracy_sum/loop, accuracy_max, accuracy_min)
+    print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}'.format(accuracy_sum/loop, accuracy_max,
+                                                                               accuracy_min))
 
     os.makedirs('./model', exist_ok=True)
     print('saved path: ', saver.save(sess, './model/model.ckpt'))
