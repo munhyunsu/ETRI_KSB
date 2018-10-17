@@ -31,11 +31,12 @@ def main():
             with open(file, 'r') as rf:
                 reader = csv.DictReader(rf)
                 for row in reader:
-                    rph = int(row['changeOfRentable'])
+                    rph = int(row['changeOfRentable'])+50
                     if min_r > rph:
                         min_r = rph
                     if max_r < rph:
                         max_r = rph
+                    row['changeOfRentable'] = rph
                     row['station'] = station
                     writer.writerow(row)
     print(min_r, max_r)
