@@ -1,3 +1,5 @@
+*.zip
+
 # IDE
 .idea/
 

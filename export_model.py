@@ -49,36 +49,17 @@ def main():
     if os.path.exists('./model/model.ckpt'):
         saver.restore(sess, './model/model.ckpt')
 
-    # classification_inputs = tf.saved_model.utils.build_tensor_info(X)
-    # classification_outputs_classes = tf.saved_model.utils.build_tensor_info(Y)
-    # classification_signature = (
-    #     tf.saved_model.signature_def_utils.build_signature_def(
-    #         inputs={
-    #             signature_constants.CLASSIFY_INPUTS:
-    #                 classification_inputs
-    #         },
-    #         outputs={
-    #             signature_constants.CLASSIFY_OUTPUT_CLASSES:
-    #                 classification_outputs_classes
-    #         },
-    #         method_name=signature_constants.CLASSIFY_METHOD_NAME))
-    # tensor_info_x = tf.saved_model.utils.build_tensor_info(X)
-    # tensor_info_y = tf.saved_model.utils.build_tensor_info(Y)
-    # prediction_signature = (
-    #     tf.saved_model.signature_def_utils.build_signature_def(
-    #         inputs={'features': tensor_info_x},
-    #         outputs={'rph': tensor_info_y},
-    #         method_name=signature_constants.PREDICT_METHOD_NAME))
-    # builder = tf.saved_model.builder.SavedModelBuilder('./saved_model')
-    # builder.add_meta_graph_and_variables(sess,
-    #                                      [tag_constants.SERVING],
-    #                                      signature_def_map={'predict_rph': prediction_signature,
-    #                                                         signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-    #                                                                        classification_signature},
-    #                                      main_op=tf.tables_initializer(),
-    #                                      strip_default_attrs=True
-    #                                      )
-    # builder.save()
+    # export SavedModel
+    signature = tf.saved_model.signature_def_utils.predict_signature_def(
+        inputs={'x': X}, outputs={'y': Y})
+    builder = tf.saved_model.builder.SavedModelBuilder('./your_saved_model/1')
+    builder.add_meta_graph_and_variables(
+        sess=sess,
+        tags=[tf.saved_model.tag_constants.SERVING],
+        signature_def_map={
+            "predict_y": signature
+        })
+    builder.save()
 
 
 if __name__ == '__main__':
