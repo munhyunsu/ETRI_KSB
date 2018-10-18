@@ -3,7 +3,6 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.contrib.tensor_forest.python import tensor_forest
 from tensorflow.python.ops import resources
-from tensorflow.saved_model import tag_constants
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
