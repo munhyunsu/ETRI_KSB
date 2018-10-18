@@ -107,9 +107,6 @@ def main():
     print('saved path: ', saver.save(sess, './model/model.ckpt'))
     tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pb', as_text=False)
     tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pbtxt')
-    builder = tf.saved_model.builder.SavedModelBuilder('./saved_model')
-    builder.add_meta_graph_and_variables(sess, [tag_constants.SERVING])
-    builder.save()
 
 
 if __name__ == '__main__':
