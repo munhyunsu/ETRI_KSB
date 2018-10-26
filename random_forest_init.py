@@ -83,6 +83,7 @@ def main():
     accuracy_max = -1
     accuracy_min = 1
     loop = 0
+    al = list()
     for file in get_files('history', ext='csv'):
         data = pd.read_csv(file)
         input_x = data.iloc[:, 0:-1].values
@@ -95,8 +96,10 @@ def main():
         if accuracy_min > accuracy:
             accuracy_min = accuracy
         loop = loop + 1
+        al.append(accuracy)
     print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}'.format(accuracy_sum / loop, accuracy_max,
                                                                                accuracy_min))
+    print(al)
 
     os.makedirs('./model', exist_ok=True)
     print('saved path: ', saver.save(sess, './model/model.ckpt'))
