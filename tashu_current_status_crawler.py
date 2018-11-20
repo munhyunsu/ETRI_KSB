@@ -58,6 +58,8 @@ def parseData(data, currentDateTime):
     stationData = jsonData['markers']
     returnDF = pd.DataFrame()
 
+    for_web = dict()
+
     for station in stationData:
         stationNum = int(station['kiosk_no'])
         cntRackTotal = 0
@@ -67,8 +69,12 @@ def parseData(data, currentDateTime):
             cntRackTotal = int(station['cntRackTotal'])
             cntRentable = int(station['cntRentable'])
             kiosk_no = int(station['kiosk_no'])
+            for_web[kiosk_no] = cntRentable
 
             returnDF = returnDF.append({'currentDateTime':currentDateTime,'hour':currentDateTime.hour, 'kiosk_no':stationNum, 'currentRentable':cntRentable, 'currentRackTotal':cntRackTotal},ignore_index=True)
+
+    with open('current.json', 'w') as f:
+        json.dump(for_web, f, indent=2, ensure_ascii=False)
 
     return returnDF
 
@@ -97,7 +103,6 @@ def weatherDataCrawler(crnt_datetime):
             crnt_feature_data['rainfall'] = tdList[8].getText()
             crnt_feature_data['humidity'] = float(tdList[10].getText())
             crnt_feature_data['windspeed'] = float(tdList[12].getText().split('\'')[1])
-            #crnt_feature_data['windspeed'] = tdList[11].getText()
             break
 
     for key, value in crnt_feature_data.items():
@@ -110,7 +115,7 @@ def recordOnFile(filePath, currentDateTime, current_tashu_status):
     if os.path.isfile(filePath):
         today_history = pd.read_csv(filePath)
 
-        prev_record = today_history.loc[today_history['hour'] == currentDateTime.hour-1,]
+        prev_record = today_history.loc[today_history['hour'] == currentDateTime.hour-1, ]
 
         if prev_record.empty:
             current_tashu_status['change_of_rentable'] = 0
@@ -118,7 +123,7 @@ def recordOnFile(filePath, currentDateTime, current_tashu_status):
             current_tashu_status['change_of_rentable'] = current_tashu_status['currentRentable'] - prev_record['currentRentable']
             print(current_tashu_status)
 
-        today_history = today_history.append(current_tashu_status, ignore_index = True)
+        today_history = today_history.append(current_tashu_status, ignore_index=True)
 
         today_history.to_csv(filePath)
 
@@ -127,6 +132,7 @@ def recordOnFile(filePath, currentDateTime, current_tashu_status):
         current_tashu_status.to_csv(filePath)
 
     return current_tashu_status
+
 
 def processOnREST(serverIP, serverPort,currentDateTime, current_tashu_status):
     crnt_test_dataset = {}
@@ -146,12 +152,28 @@ def processOnREST(serverIP, serverPort,currentDateTime, current_tashu_status):
     change_of_rentable = current_tashu_status['change_of_rentable'].tolist()
     change_of_rentable = [0]+change_of_rentable
 
-
     crnt_test_dataset['changeOfRentable'] = change_of_rentable
 
-    http_client = http.client.HTTPConnection(serverIP+':'+str(serverPort))
-    http_client.request('POST', "/", json.dumps(crnt_test_dataset), headers = {'Content-Type':'application/json'})
-    print(json.dumps(crnt_test_dataset))
+    # http_client = http.client.HTTPConnection(serverIP+':'+str(serverPort))
+    # station,rentMonth,rentHour,rentWeekday,temperature,humidity,windspeed,rainfall,changeOfRentable
+    # print(crnt_test_dataset)
+    for index in range(1, len(change_of_rentable)):
+        http_client = http.client.HTTPConnection(serverIP + ':' + str(serverPort))
+        data = {'station': index,
+                'rentMonth': crnt_test_dataset['rentMonth'],
+                'rentHour': crnt_test_dataset['rentHour'],
+                'rentWeekday': crnt_test_dataset['rentWeekday'],
+                'temperature': crnt_test_dataset['temperature'],
+                'humidity': crnt_test_dataset['humidity'],
+                'windspeed': crnt_test_dataset['windspeed'],
+                'rainfall': crnt_test_dataset['rainfall'],
+                'changeOfRentable': crnt_test_dataset['changeOfRentable'][index]+50
+                }
+        http_client.request('POST', "/", json.dumps(data), headers={'Content-Type':'application/json'})
+        print(index, json.dumps(data))
+    with open('latest.json', 'w') as f:
+        json.dump(crnt_test_dataset, f, indent=2, ensure_ascii=False)
+
 
 def main():
     currentDateTime = datetime.datetime.now()
