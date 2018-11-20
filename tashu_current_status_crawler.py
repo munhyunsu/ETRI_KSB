@@ -95,8 +95,8 @@ def weatherDataCrawler(crnt_datetime):
             tdList = tr.find_all('td')
             crnt_feature_data['temperature'] = float(tdList[5].getText())
             crnt_feature_data['rainfall'] = tdList[8].getText()
-            crnt_feature_data['humidity'] = float(tdList[9].getText())
-            crnt_feature_data['windspeed'] = float(tdList[11].getText().split('\'')[1])
+            crnt_feature_data['humidity'] = float(tdList[10].getText())
+            crnt_feature_data['windspeed'] = float(tdList[12].getText().split('\'')[1])
             #crnt_feature_data['windspeed'] = tdList[11].getText()
             break
 
@@ -163,6 +163,7 @@ def main():
     crnt_tashu_status = currentStatusCrawler()
     crnt_tashu_status_df = parseData(crnt_tashu_status, currentDateTime)
     tashu_status_log_dir = "./status_data/"
+    os.makedirs(tashu_status_log_dir, exist_ok=True)
     tashu_status_log_fileName = str(currentDateTime.year)+"%2d"%currentDateTime.month+"%2d"%currentDateTime.day+"_tashu_record.csv"
     tashu_status_log_path = tashu_status_log_dir+tashu_status_log_fileName
     current_tashu_status = recordOnFile(tashu_status_log_path, currentDateTime, crnt_tashu_status_df)
