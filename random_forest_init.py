@@ -7,30 +7,46 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 import os
+# import pathresolver package
+import pathResolver as pathRes
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+FLAGS = None
 
 
 def get_files(path, ext='', recursive=False):
     path_list = [path]
+    result = list()
 
     while len(path_list) > 0:
         cpath = path_list.pop()
-        with os.scandir(cpath) as it:
-            for entry in it:
-                if not entry.name.startswith('.') and entry.is_file():
-                    if entry.name.endswith(ext):
-                        yield entry.path
-                    else:
-                        if recursive:
-                            path_list.append(entry.path)
+        for entry in os.scandir(cpath):
+            if not entry.name.startswith('.') and entry.is_file():
+                if entry.name.endswith(ext):
+                    result.append(entry.path)
+                else:
+                    if recursive:
+                        path_list.append(entry.path)
+
+    return result
 
 
 def main():
+
+    # Initiate pathresolver
+    pathresolver = pathRes.PathResolver(FLAGS.input, FLAGS.modelPath, FLAGS.model, FLAGS.output)
+
+    # Get paths from pathresolver
+    local_model_base_path, local_model_path, local_checkpoint_file, output_file_path = \
+        pathresolver.get_paths()
+    data_path = pathresolver.get_input_path()
+    print("Resolved input_file_path:", data_path)
+
     # Parameters
-    num_steps = 50  # Total steps to train
-    num_classes = 100  # The 10 digits
-    num_features = 8  # Each image is 28x28 pixels
+    num_steps = 50
+    num_classes = 100
+    num_features = 8
     num_trees = 10
     max_nodes = 1000
 
@@ -72,40 +88,66 @@ def main():
     # Training
     for i in range(1, num_steps + 1):
         # Prepare Data
-        for file in get_files('history', ext='csv'):
+        for file in get_files(data_path, ext='csv'):
             data = pd.read_csv(file)
             input_x = data.iloc[:, 0:-1].values
             input_y = data.iloc[:, -1].values
             _, l = sess.run([train_op, loss_op], feed_dict={X: input_x, Y: input_y})
+            break
 
     # Test Model
-    accuracy_sum = 0
-    accuracy_max = -1
-    accuracy_min = 1
-    loop = 0
-    al = list()
-    for file in get_files('history', ext='csv'):
-        data = pd.read_csv(file)
-        input_x = data.iloc[:, 0:-1].values
-        input_y = data.iloc[:, -1].values
-        x_train, x_test, y_train, y_test = train_test_split(input_x, input_y, test_size=0.25)
-        accuracy = sess.run(accuracy_op, feed_dict={X: x_test, Y: y_test})
-        accuracy_sum = accuracy_sum + accuracy
-        if accuracy_max < accuracy:
-            accuracy_max = accuracy
-        if accuracy_min > accuracy:
-            accuracy_min = accuracy
-        loop = loop + 1
-        al.append(accuracy)
-    print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}'.format(accuracy_sum / loop, accuracy_max,
-                                                                               accuracy_min))
-    print(al)
+#    accuracy_sum = 0
+#    accuracy_max = -1
+#    accuracy_min = 1
+#    loop = 0
+#    al = list()
+#    for file in get_files('history', ext='csv'):
+#        data = pd.read_csv(file)
+#        input_x = data.iloc[:, 0:-1].values
+#        input_y = data.iloc[:, -1].values
+#        x_train, x_test, y_train, y_test = train_test_split(input_x, input_y, test_size=0.25)
+#        accuracy = sess.run(accuracy_op, feed_dict={X: x_test, Y: y_test})
+#        accuracy_sum = accuracy_sum + accuracy
+#        if accuracy_max < accuracy:
+#            accuracy_max = accuracy
+#        if accuracy_min > accuracy:
+#            accuracy_min = accuracy
+#        loop = loop + 1
+#        al.append(accuracy)
+#    print('Test Accuracy - Avg: {0:0.4f}, Max: {1:0.4f}, Min: {2:0.4f}'.format(accuracy_sum / loop, accuracy_max,
+#                                                                               accuracy_min))
+#    print(al)
 
-    os.makedirs('./model', exist_ok=True)
-    print('saved path: ', saver.save(sess, './model/model.ckpt'))
-    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pb', as_text=False)
-    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pbtxt')
+
+#    os.makedirs('./model', exist_ok=True)
+    print('saved path: ', saver.save(sess, local_checkpoint_file))
+#    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pb', as_text=False)
+#    tf.train.write_graph(sess.graph_def, './model/my_model', 'train.pbtxt')
+
+    # export SavedModel
+    signature = tf.saved_model.signature_def_utils.predict_signature_def(
+        inputs={'x': X}, outputs={'y': infer_op})
+    builder = tf.saved_model.builder.SavedModelBuilder(local_model_path)
+    builder.add_meta_graph_and_variables(
+        sess=sess,
+        tags=[tf.saved_model.tag_constants.SERVING],
+        signature_def_map={
+            "predict": signature
+        })
+    builder.save()
+
+    # Store model to target file system
+    pathresolver.store_output_model()
 
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Train rnn on tensorflow.')
+    parser.add_argument('--input', type=str, default="", help='input path')
+    parser.add_argument('--output', type=str, default="", help='output path')
+    parser.add_argument('--model', type=str, default="", help='model path')
+    parser.add_argument('--modelPath', type=str, default="", help='model base path')
+
+    FLAGS, unparsed = parser.parse_known_args()
     main()
