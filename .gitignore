@@ -1,12 +1,5 @@
-*.zip
-model/
-
 # IDE
 .idea/
-
-# data
-data/
-*.csv
 
 # temporary files
 *.swp
