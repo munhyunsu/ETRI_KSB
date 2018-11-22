@@ -1,25 +1,15 @@
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 import pandas as pd
 import time
 import json
 import datetime
-import csv
 import sys
 import urllib.request
 from bs4 import BeautifulSoup
 import os
-import requests
 import http.client
 
-"""
-    function Name : currentStatusCrawler
-    - crawl the current status(the number of rest bikes) of total tashu system
-"""
+
 def currentStatusCrawler():
     url = 'https://www.tashu.or.kr/userpage/station/mapStatus.jsp?flg=main'
 
