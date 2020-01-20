@@ -1,5 +1,6 @@
 # ETRI_KSB
-Source-codes about ETRI KSB framework.
+- Source-codes about ETRI KSB framework.
+- 2nd Prize!
 
 ## Goal
 - Predict public bicycle demand
